@@ -1,26 +1,26 @@
-from rest_framework import permissions
-from rest_framework import viewsets, status
-from django.db.models import Exists, OuterRef
+from django.db.models import F, Sum
 from django.http import HttpResponse
-from django.db.models import Sum, F
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from django_filters.rest_framework import DjangoFilterBackend
-from users.models import User, Subscription
 from django.shortcuts import render
-from rest_framework.decorators import api_view, permission_classes
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
-from .models import (
-    Recipe, Favorite, ShoppingCart, Tag, Ingredient, RecipeIngredient
-)
-from .serializers import (
-    UserSerializer, RecipeSerializer, ShortRecipeSerializer,
-    TagSerializer, IngredientSerializer, RecipeCreateSerializer,
-    FavoritesSerializer
-)
+from rest_framework.response import Response
+
+
 from .filters import RecipeFilter
+from .models import (
+    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+)
 from .permissions import IsAuthorOrReadOnly
+from .serializers import (
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeSerializer,
+    ShortRecipeSerializer,
+    TagSerializer,
+)
 
 
 class RecipePagination(PageNumberPagination):
@@ -90,6 +90,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         # Аннотируем is_favorited и is_in_shopping_cart
         if self.request.user.is_authenticated:
             from django.db.models import Exists, OuterRef
+
             from .models import Favorite, ShoppingCart
 
             favorited = Favorite.objects.filter(
@@ -266,8 +267,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-
-
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):

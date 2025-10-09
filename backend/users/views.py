@@ -1,14 +1,13 @@
-from rest_framework import viewsets, status
-from rest_framework.views import APIView
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.db.models import Exists, OuterRef
-from rest_framework import permissions
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserAvatarSerializer
-from .models import User, Subscription
+from rest_framework.response import Response
+
+from api.serializers import SubscriptionSerializer, UserSerializer
+
+from .models import Subscription, User
 from .serializers import CustomUserCreateSerializer, UserAvatarSerializer
-from api.serializers import UserSerializer, SubscriptionSerializer
 
 
 class UserPagination(PageNumberPagination):
@@ -206,16 +205,16 @@ class UserViewSet(viewsets.ModelViewSet):
             subscribed_to__user=user
         ).prefetch_related('recipes')
 
-        print(f"🔍 Найдено подписок: {subscribed_authors.count()}")
-
         page = self.paginate_queryset(subscribed_authors)
         if page is not None:
-            serializer = SubscriptionSerializer(page, many=True, context={'request': request})
+            serializer = SubscriptionSerializer(
+                page, many=True, context={'request': request}
+            )
             response = self.get_paginated_response(serializer.data)
-            print(f"🔍 Ответ пагинатора: {response.data}")  # ← отладка
             return response
 
-        serializer = SubscriptionSerializer(subscribed_authors, many=True, context={'request': request})
+        serializer = SubscriptionSerializer(
+            subscribed_authors, many=True, context={'request': request}
+        )
         response_data = serializer.data
-        print(f"🔍 Ответ без пагинации: {response_data}")  # ← отладка
         return Response(response_data)

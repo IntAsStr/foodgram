@@ -1,11 +1,12 @@
 import base64
 import uuid
+
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from users.models import User, Subscription
-from .models import (
-    Recipe, Ingredient, Tag, RecipeIngredient, ShoppingCart, Favorite
-)
+
+from users.models import Subscription, User
+
+from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
 
 
 class Base64ImageField(serializers.ImageField):
@@ -322,7 +323,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                     'name': recipe_ingredient.ingredient.name,
                     'measurement_unit': (
                         recipe_ingredient.ingredient.measurement_unit
-                        ),
+                    ),
                     'amount': recipe_ingredient.amount
                 })
 
