@@ -17,7 +17,7 @@ services:
 
   backend:
     environment:
-      - CSRF_TRUSTED_ORIGINS=https://foodgrammus.duckdns.org,http://foodgrammus.duckdns.org,http://89.169.162.168
+      CSRF_TRUSTED_ORIGINS: "https://foodgrammus.duckdns.org,http://foodgrammus.duckdns.org,http://89.169.162.168"
     container_name: foodgram-backend
     image: mostloony/foodgram-backend
     env_file: .env
