@@ -305,10 +305,12 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             )
 
         # Создаем запись в избранном
-        favorite = Favorite.objects.create(user=request.user, recipe=recipe)
+        Favorite.objects.create(user=request.user, recipe=recipe)
 
         # Возвращаем данные рецепта
-        serializer = ShortRecipeSerializer(recipe, context={'request': request})
+        serializer = ShortRecipeSerializer(
+            recipe, context={'request': request}
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
