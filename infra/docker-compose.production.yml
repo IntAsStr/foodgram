@@ -17,30 +17,29 @@ services:
 
   backend:
     container_name: foodgram-backend
-    build: ../backend
+    image: mostloony/foodgram-backend
+    env_file: .env
     volumes:
       - media_volume:/app/media/
       - backend_static_volume:/app/collected_static/
-    env_file:
-      - .env
     depends_on:
       - db
 
   frontend:
     container_name: foodgram-front
-    build: ../frontend
+    image: mostloony/foodgram-frontend
     command: ["sh", "-c", "cp -r /app/build/. /static/ && ls -la /static/"]
     volumes:
       - frontend_static_volume:/static/
     depends_on:
       - backend
+
   nginx:
     container_name: foodgram-proxy
-    image: nginx:1.25.4-alpine
+    image: mostloony/foodgram-nginx
     ports:
       - "9001:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - backend_static_volume:/app/collected_static/
       - frontend_static_volume:/static/
       - media_volume:/app/media/
