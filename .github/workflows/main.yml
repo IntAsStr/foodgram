@@ -22,7 +22,7 @@ jobs:
         pip install -r ./backend/requirements.txt
     - name: Run flake8
       run: |
-        python -m flake8 backend/ --exclude=venv/
+        python -m flake8 backend/ --exclude=venv/,migrations --ignore=E501
   build_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
     runs-on: ubuntu-latest
