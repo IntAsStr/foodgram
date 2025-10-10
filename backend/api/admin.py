@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from api.models import (
+from .models import (
     Favorite,
     Ingredient,
     Recipe,
@@ -8,6 +8,14 @@ from api.models import (
     ShoppingCart,
     Tag,
 )
+from users.models import User
+
+
+@admin.register(User)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email')
+    list_filter = ('is_staff', 'is_superuser', 'is_active')
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -39,19 +47,18 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для рецептов."""
     list_display = (
-        'id',
-        'name',
-        'author',
-        'cooking_time',
-        'pub_date',
-        'count_favorites',
+        'id', 'name', 'author', 'cooking_time',
+        'pub_date', 'favorites_count'
     )
     list_display_links = ('name',)
     search_fields = ('name', 'author__username', 'tags__name')
     list_filter = ('tags', 'pub_date', 'author')
     filter_horizontal = ('tags',)
     inlines = (RecipeIngredientInline,)
-    readonly_fields = ('pub_date', 'count_favorites')
+    readonly_fields = ('pub_date',)
+
+    def favorites_count(self, obj):
+        return obj.favorites.count()
 
 
 @admin.register(RecipeIngredient)
@@ -66,7 +73,7 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
     """Админка для избранных рецептов."""
-    list_display = ('id', 'user', 'recipe', 'get_recipe_author')
+    list_display = ('id', 'user', 'recipe')
     list_display_links = ('user',)
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
@@ -75,7 +82,7 @@ class FavoriteAdmin(admin.ModelAdmin):
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     """Админка для корзины покупок."""
-    list_display = ('id', 'user', 'recipe', 'get_recipe_author')
+    list_display = ('id', 'user', 'recipe')
     list_display_links = ('user',)
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
