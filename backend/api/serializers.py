@@ -33,9 +33,13 @@ class Base64ImageField(serializers.ImageField):
                 data = ContentFile(decoded_file, name=file_name)
 
             except (ValueError, TypeError, AttributeError) as e:
-                raise serializers.ValidationError(f"Ошибка декодирования base64: {str(e)}")
+                raise serializers.ValidationError(
+                    f"Ошибка декодирования base64: {str(e)}"
+                )
             except Exception as e:
-                raise serializers.ValidationError(f"Ошибка обработки изображения: {str(e)}")
+                raise serializers.ValidationError(
+                    f"Ошибка обработки изображения: {str(e)}"
+                )
 
         return super().to_internal_value(data)
 

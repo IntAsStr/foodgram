@@ -9,7 +9,6 @@ exclude =
     __pycache__,
     migrations
 max-line-length = 88
-extend-ignore = E501
 per-file-ignores =
     __init__.py: E402
     */migrations/*: E402, E501

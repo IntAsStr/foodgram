@@ -10,9 +10,21 @@ from users.views import UserViewSet
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('cart/', RecipeViewSet.as_view({'get': 'shopping_cart_list'}), name='cart'),
-    path('cart/count/', RecipeViewSet.as_view({'get': 'shopping_cart_count'}), name='cart-count'),
-    path('subscriptions/', UserViewSet.as_view({'get': 'subscriptions'}), name='subscriptions'),
+    path(
+        'cart/',
+        RecipeViewSet.as_view({'get': 'shopping_cart_list'}),
+        name='cart'
+    ),
+    path(
+        'cart/count/',
+        RecipeViewSet.as_view({'get': 'shopping_cart_count'}),
+        name='cart-count'
+    ),
+    path(
+        'subscriptions/',
+        UserViewSet.as_view({'get': 'subscriptions'}),
+        name='subscriptions'
+    ),
     path('favorites/', favorites_page, name='favorites-page'),
 ]
 
