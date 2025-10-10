@@ -6,7 +6,9 @@ from rest_framework import serializers
 
 from users.models import Subscription, User
 
-from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+from .models import (
+    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+)
 
 
 class Base64ImageField(serializers.ImageField):
