@@ -1,9 +1,11 @@
 from django.conf import settings
+from django.shortcuts import render
 from django.db.models import F, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view, action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -312,3 +314,8 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                 {'error': 'Рецепт не найден в избранном'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def favorites_page(request):
+    return render(request, 'index.html')

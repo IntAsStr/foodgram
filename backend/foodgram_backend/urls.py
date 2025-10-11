@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from api.views import RecipeViewSet
+from api.views import RecipeViewSet, favorites_page
 from users.views import UserViewSet
 
 
@@ -24,7 +24,8 @@ urlpatterns = [
         'subscriptions/',
         UserViewSet.as_view({'get': 'subscriptions'}),
         name='subscriptions'
-    )
+    ),
+    path('favorites/', favorites_page, name='favorites-page'),
 ]
 
 if settings.DEBUG:
