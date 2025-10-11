@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -203,6 +203,8 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         subscribed_authors = User.objects.filter(
             subscribed_to__user=user
+        ).annotate(
+            recipes_count=Count('recipes', distinct=True)
         ).prefetch_related('recipes')
 
         page = self.paginate_queryset(subscribed_authors)

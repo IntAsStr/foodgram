@@ -1,17 +1,15 @@
+from django.conf import settings
 from django.db.models import F, Sum
 from django.http import HttpResponse
-from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
 
 from .filters import RecipeFilter
 from .models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+    Favorite, Recipe, RecipeIngredient, ShoppingCart, Tag
 )
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -24,13 +22,12 @@ from .serializers import (
 
 
 class RecipePagination(PageNumberPagination):
-    page_size = 6
+    page_size = settings.RECIPE_PAGE_SIZE
     page_size_query_param = 'page_size'
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
-    queryset = Recipe.objects.all()
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly
     ]
@@ -53,39 +50,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Recipe.objects.all()
 
         queryset = queryset.select_related('author').prefetch_related(
             'tags', 'recipe_ingredients__ingredient'
         )
-
-        # ФИЛЬТРАЦИЯ ПО ИЗБРАННОМУ
-        is_favorited = self.request.query_params.get('is_favorited')
-        if is_favorited == '1' and self.request.user.is_authenticated:
-            queryset = queryset.filter(favorites__user=self.request.user)
-
-        # фильтр корзины
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart'
-        )
-        if is_in_shopping_cart == '1' and self.request.user.is_authenticated:
-            queryset = queryset.filter(shopping_cart__user=self.request.user)
-
-        # фильтрация по тегам
-        tags = self.request.query_params.getlist('tags')
-
-        if tags:
-            # Фильтруем по ЛЮБОМУ из переданных тегов (OR логика)
-            from django.db.models import Q
-            tag_filter = Q()
-            for tag_slug in tags:
-                tag_filter |= Q(tags__slug=tag_slug)
-            queryset = queryset.filter(tag_filter).distinct()
-        # Фильтрация по автору
-        author_id = self.request.query_params.get('author')
-        if author_id:
-            queryset = queryset.filter(author_id=author_id)
-            print(f"🔍 После фильтра автора: {queryset.count()}")
 
         # Аннотируем is_favorited и is_in_shopping_cart
         if self.request.user.is_authenticated:
@@ -218,16 +187,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         print(f"🔍 Актуальное количество в корзине: {count}")  # для отладки
         return Response({'count': count})
 
-    @action(
-        detail=False,
-        methods=['get'],
-        permission_classes=[permissions.IsAuthenticated],
-        url_path='download_shopping_cart',
-        url_name='download_shopping_cart'
-    )
-    def download_shopping_cart(self, request):
-        """Скачать список покупок в формате TXT"""
-        user = request.user
+    def generate_shopping_list_text(self, user):
+        """Генерирует текст списка покупок для пользователя."""
 
         # Получаем ингредиенты из корзины с суммированием
         shopping_list = RecipeIngredient.objects.filter(
@@ -238,7 +199,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(total_amount=Sum('amount'))
 
         # Формируем текст
-        text = "🍽️ Foodgram - Список покупок\n"
+        text = "Foodgram - Список покупок\n"
         text += "=" * 40 + "\n\n"
 
         for item in shopping_list:
@@ -249,6 +210,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         text += f"\nВсего позиций: {shopping_list.count()}\n"
         text += "Приятных покупок! 🛒"
+
+        return text
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[permissions.IsAuthenticated],
+        url_path='download_shopping_cart',
+        url_name='download_shopping_cart'
+    )
+    def download_shopping_cart(self, request):
+        """Скачать список покупок в формате TXT"""
+
+        user = request.user
+
+        # Используем отдельный метод для генерации текста
+        text = self.generate_shopping_list_text(user)
 
         # Создаем HTTP response с файлом
         response = HttpResponse(text, content_type='text/plain; charset=utf-8')
@@ -265,7 +243,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 
     def get_queryset(self):
@@ -335,9 +312,3 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                 {'error': 'Рецепт не найден в избранном'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def favorites_page(request):
-    return render(request, 'index.html')

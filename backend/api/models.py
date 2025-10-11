@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from users.models import User
@@ -54,7 +55,13 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='recipe_ingredients'
     )
-    amount = models.PositiveSmallIntegerField('Количество')
+    amount = models.PositiveSmallIntegerField(
+        'Количество',
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(2000)
+        ]
+    )
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
@@ -86,7 +93,6 @@ class Recipe(models.Model):
         'Картинка',
         upload_to='recipes/',
         blank=True,
-        null=True
     )
     text = models.TextField('Текст')
     ingredients = models.ManyToManyField(
@@ -100,7 +106,11 @@ class Recipe(models.Model):
         verbose_name='Теги'
     )
     cooking_time = models.PositiveSmallIntegerField(
-        'Время приготовления (в минутах)'
+        'Время приготовления (в минутах)',
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(1440)
+        ]
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -118,6 +128,7 @@ class Recipe(models.Model):
 
 class Favorite(models.Model):
     """Модель избранных рецептов."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -140,6 +151,7 @@ class Favorite(models.Model):
 
 class ShoppingCart(models.Model):
     """Модель корзины покупок."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

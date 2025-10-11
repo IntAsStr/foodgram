@@ -6,15 +6,11 @@ from rest_framework import serializers
 
 from users.models import Subscription, User
 
-from .models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
-)
+from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
 
 
 class Base64ImageField(serializers.ImageField):
-    """
-    Кастомное поле для Django REST Framework для обработки base64 изображений.
-    """
+    """Кастомное поле для REST Framework для base64 изображений."""
 
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
@@ -226,76 +222,75 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         return validated_ingredients
 
+    def _create_or_update_tags(self, recipe, tags_data):
+        """Создать или обновить теги рецепта."""
+
+        recipe.tags.set(tags_data)
+
+    def _create_or_update_ingredients(self, recipe, ingredients_data):
+        """Создать или обновить ингредиенты рецепта."""
+
+        # Удаляем старые ингредиенты
+        recipe.recipe_ingredients.all().delete()
+
+        # Создаем новые пачкой
+        ingredients_to_create = [
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient_id=ingredient_data['id'],
+                amount=ingredient_data['amount']
+            )
+            for ingredient_data in ingredients_data
+        ]
+        RecipeIngredient.objects.bulk_create(ingredients_to_create)
+
     def create(self, validated_data):
-        try:
-            ingredients_data = validated_data.pop('ingredients')
-            tags = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
 
-            # Создаем рецепт
-            recipe = Recipe.objects.create(
-                author=self.context['request'].user,
-                **validated_data
-            )
+        # Создаем рецепт
+        recipe = Recipe.objects.create(
+            author=self.context['request'].user,
+            **validated_data
+        )
 
-            # Добавляем теги
-            for tag in tags:
-                recipe.tags.add(tag)
+        # Добавляем теги
+        self._create_or_update_tags(recipe, tags)
 
-            # Создаем связи с ингредиентами
-            for ingredient_data in ingredients_data:
-                RecipeIngredient.objects.create(
-                    recipe=recipe,
-                    ingredient_id=ingredient_data['id'],
-                    amount=ingredient_data['amount']
-                )
+        # Создаем связи с ингредиентами
+        self._create_or_update_ingredients(recipe, ingredients_data)
 
-            return recipe
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise serializers.ValidationError(
-                f"Ошибка при создании рецепта: {str(e)}"
-            )
+        return recipe
 
     def update(self, instance, validated_data):
         """Обновление рецепта с поддержкой частичного обновления."""
-        try:
-            # Извлекаем ingredients и tags если они есть
-            ingredients_data = validated_data.pop('ingredients', None)
-            tags_data = validated_data.pop('tags', None)
 
-            # Обновляем основные поля
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
+        # Извлекаем ingredients и tags если они есть
+        ingredients_data = validated_data.pop('ingredients', None)
+        tags_data = validated_data.pop('tags', None)
 
-            instance.save()
+        # Обновляем основные поля
+        instance = super().update(instance, validated_data)
 
-            # Обновляем теги если они переданы
-            if tags_data is not None:
-                instance.tags.set(tags_data)
+        # Обновляем теги и ингредиенты через общие методы
+        if tags_data is not None:
+            self._create_or_update_tags(instance, tags_data)
+        if ingredients_data is not None:
+            self._create_or_update_ingredients(instance, ingredients_data)
 
-            # Обновляем ингредиенты если они переданы
-            if ingredients_data is not None:
-                # Удаляем старые ингредиенты
-                instance.recipe_ingredients.all().delete()
+        return instance
 
-                # Создаем новые
-                for ingredient_data in ingredients_data:
-                    RecipeIngredient.objects.create(
-                        recipe=instance,
-                        ingredient_id=ingredient_data['id'],
-                        amount=ingredient_data['amount']
-                    )
 
-            return instance
+class RecipeIngredientReadSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
 
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise serializers.ValidationError(
-                f"Ошибка при обновлении рецепта: {str(e)}"
-            )
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -316,44 +311,20 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_ingredients(self, obj):
         """Получаем ингредиенты с названиями и единицами измерения."""
-        try:
-            # Используем prefetch_related для оптимизации запросов
-            recipe_ingredients = obj.recipe_ingredients.select_related(
-                'ingredient'
-            ).all()
 
-            ingredients_data = []
-            for recipe_ingredient in recipe_ingredients:
-                ingredients_data.append({
-                    'id': recipe_ingredient.ingredient.id,
-                    'name': recipe_ingredient.ingredient.name,
-                    'measurement_unit': (
-                        recipe_ingredient.ingredient.measurement_unit
-                    ),
-                    'amount': recipe_ingredient.amount
-                })
-
-            return ingredients_data
-
-        except Exception as e:
-            print(f"⚠️ Ошибка при сериализации ингредиентов: {str(e)}")
-            return []
+        # Используем существующий сериализатор
+        return RecipeIngredientReadSerializer(
+            obj.recipe_ingredients.select_related('ingredient').all(),
+            many=True
+        ).data
 
     def get_tags(self, obj):
         """Безопасное получение тегов."""
-        try:
-            # Если это ManyRelatedManager - преобразуем в список
-            if hasattr(obj.tags, 'all'):
-                tags = obj.tags.all()
-            else:
-                tags = obj.tags
-            return TagSerializer(tags, many=True).data
-        except Exception as e:
-            print(f"⚠️ Ошибка при сериализации тегов: {str(e)}")
-            return []
+        return TagSerializer(obj.tags.all(), many=True).data
 
     def get_is_favorited(self, obj):
         """Проверяет, в избранном ли рецепт у текущего пользователя."""
+
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(
@@ -394,7 +365,7 @@ class CartRecipeSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.BooleanField(default=True, read_only=True)
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(default=0, read_only=True)
 
     class Meta:
         model = User
@@ -410,9 +381,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'recipes_limit'
         ) if request else None
 
-        try:
-            recipes_limit = int(recipes_limit) if recipes_limit else None
-        except ValueError:
+        if recipes_limit and recipes_limit.isdigit():
+            recipes_limit = int(recipes_limit)
+        else:
             recipes_limit = None
 
         recipes = obj.recipes.all()
@@ -424,10 +395,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context
         ).data
-
-    def get_recipes_count(self, obj):
-        """Количество рецептов автора."""
-        return obj.recipes.count()
 
 
 class FavoritesSerializer(serializers.ModelSerializer):
