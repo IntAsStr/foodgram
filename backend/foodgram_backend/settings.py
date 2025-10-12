@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv(
     'django-insecure-w**5kg=z4ez)$92y$2rvu8ol1mmmgsscze&8h*81t8j)-!paa$'
 )
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False')
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS', 'localhost,127.0.0.1,backend'
@@ -26,13 +26,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'users',
-    'api',
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
     'corsheaders',
     'django_filters',
+    'users',
+    'api',
 ]
 
 MIDDLEWARE = [
