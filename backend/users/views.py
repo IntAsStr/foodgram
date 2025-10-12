@@ -5,7 +5,9 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from api.serializers import SubscriptionSerializer, UserSerializer
+from api.serializers import (
+    SubscriptionSerializer, UserSerializer, SubscriptionCreateSerializer
+)
 
 from .models import Subscription, User
 from .serializers import CustomUserCreateSerializer, UserAvatarSerializer
@@ -115,17 +117,21 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            serializer = SubscriptionSerializer(data={
-                'user': user.id,
-                'author': author.id
-            })
+            serializer = SubscriptionCreateSerializer(
+                data={'author': author.id},
+                context={'request': request}
+            )
             serializer.is_valid(raise_exception=True)
 
             serializer.save()
 
-            author_serializer = self.get_serializer(author)
+            author_serializer = SubscriptionSerializer(
+                author,
+                context={'request': request}
+            )
             return Response(
-                author_serializer.data, status=status.HTTP_201_CREATED
+                author_serializer.data,
+                status=status.HTTP_201_CREATED
             )
 
         elif request.method == 'DELETE':
