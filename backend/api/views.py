@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .filters import RecipeFilter
 from .models import (
-    Favorite, Recipe, RecipeIngredient, ShoppingCart, Tag
+    Favorite, Recipe, Ingredient, RecipeIngredient, ShoppingCart, Tag
 )
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -246,7 +246,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Ingredient.objects.all()
         name = self.request.query_params.get('name')
         if name:
             # Ищем по частичному совпадению (более гибко)
