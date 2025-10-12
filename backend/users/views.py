@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Exists, OuterRef
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from .serializers import CustomUserCreateSerializer, UserAvatarSerializer
 
 
 class UserPagination(PageNumberPagination):
-    page_size = 6
+    page_size = settings.USERS_PAGE_SIZE
     page_size_query_param = 'page_size'
 
 
@@ -20,6 +21,11 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     pagination_class = UserPagination
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CustomUserCreateSerializer
+        return UserSerializer
 
     def get_permissions(self):
         if self.action == 'create':
@@ -32,23 +38,13 @@ class UserViewSet(viewsets.ModelViewSet):
         # Аннотируем is_subscribed для АВТОРА (того, на кого смотрим)
         if self.request.user.is_authenticated:
             subscribed = Subscription.objects.filter(
-                user=self.request.user,        # текущий пользователь
-                author=OuterRef('pk')          # автор, которого смотрим
+                user=self.request.user,
+                author=OuterRef('pk')
             )
             queryset = queryset.annotate(
                 is_subscribed=Exists(subscribed)
             )
         return queryset
-
-    def create(self, request, *args, **kwargs):
-        """Создание пользователя (регистрация)."""
-        serializer = CustomUserCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-
-        # Возвращаем данные пользователя
-        user_serializer = UserSerializer(user, context={'request': request})
-        return Response(user_serializer.data, status=status.HTTP_201_CREATED)
 
     def get_serializer_context(self):
         """Передаем request в сериализатор для построения полных URL."""

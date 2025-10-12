@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -6,29 +7,28 @@ from django.db import models
 class User(AbstractUser):
     username = models.CharField(
         'username',
-        max_length=150,
+        max_length=settings.USERNAME_MAX_LENGTH,
         unique=True
     )
     email = models.EmailField(
         'email address',
         unique=True,
-        help_text='Обязательное поле. Укажите действующий email.'
     )
     first_name = models.CharField(
         'first name',
-        max_length=150,
+        max_length=settings.FIRST_NAME_MAX_LENGTH,
         help_text='Обязательное поле. Укажите ваше имя.'
     )
     last_name = models.CharField(
         'last name',
-        max_length=150,
+        max_length=settings.LAST_NAME_MAX_LENGTH,
         help_text='Обязательное поле. Укажите вашу фамилию.'
     )
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/avatars/',
         blank=True,
-        null=True,
+        default='',
         max_length=500
     )
 
@@ -48,27 +48,25 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='subscriber',  # кто подписывается
+        related_name='subscriber',
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='subscribed_to',  # на кого подписываются
+        related_name='subscribed_to',
         verbose_name='Автор'
     )
 
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        # Один пользователь не может подписаться на одного автора дважды
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'],
                 name='unique_subscription'
             )
         ]
-        # Нельзя подписаться на самого себя
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'],
@@ -80,6 +78,9 @@ class Subscription(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f'{self.user} подписан на {self.author}'
+
     def clean(self):
         """Валидация на уровне модели."""
         if self.user == self.author:
@@ -88,6 +89,3 @@ class Subscription(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f'{self.user} подписан на {self.author}'

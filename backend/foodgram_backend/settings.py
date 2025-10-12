@@ -172,3 +172,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://foodgrammus.duckdns.org',
     'http://89.169.162.168',
 ]
+
+USERS_PAGE_SIZE = 6
+USERNAME_MAX_LENGTH = 150
+FIRST_NAME_MAX_LENGTH = 150
+LAST_NAME_MAX_LENGTH = 150
