@@ -10,10 +10,12 @@ class RecipeFilter(django_filters.FilterSet):
         queryset=Tag.objects.all()
     )
     is_favorited = django_filters.BooleanFilter(
-        method='filter_is_favorited'
+        method='filter_is_favorited',
+        widget=django_filters.widgets.BooleanWidget()
     )
     is_in_shopping_cart = django_filters.BooleanFilter(
-        method='filter_is_in_shopping_cart'
+        method='filter_is_in_shopping_cart',
+        widget=django_filters.widgets.BooleanWidget()
     )
     author = django_filters.NumberFilter(
         field_name='author__id'
