@@ -374,6 +374,23 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'avatar', 'is_subscribed', 'recipes', 'recipes_count'
         )
 
+    def validate(self, data):
+        """Валидация данных подписки."""
+        user = data['user']
+        author = data['author']
+
+        if user == author:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя'
+            )
+
+        if Subscription.objects.filter(user=user, author=author).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписаны на этого пользователя'
+            )
+
+        return data
+
     def get_recipes(self, obj):
         """Получить рецепты автора с лимитом."""
         request = self.context.get('request')
