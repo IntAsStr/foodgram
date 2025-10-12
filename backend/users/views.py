@@ -46,6 +46,11 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         return queryset
 
+    def perform_create(self, serializer):
+        """Сохраняет пользователя и возвращает его."""
+        user = serializer.save()
+        return user
+
     def get_serializer_context(self):
         """Передаем request в сериализатор для построения полных URL."""
         context = super().get_serializer_context()
