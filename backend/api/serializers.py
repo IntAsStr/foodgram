@@ -2,6 +2,7 @@ import base64
 import uuid
 
 from django.core.files.base import ContentFile
+from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
 
 from users.models import Subscription, User
@@ -11,30 +12,26 @@ from .models import (
 )
 
 
-class Base64ImageField(serializers.ImageField):
-    """Кастомное поле для REST Framework для base64 изображений."""
-
+class Base64AvatarField(serializers.ImageField):
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
-            # Формат: data:image/png;base64,iVBORw0KGgo...
             try:
                 # Разделяем header и данные
-                header, base64_data = data.split(';base64,')
+                format, imgstr = data.split(';base64,')
                 # Получаем расширение файла
-                file_extension = header.split('/')[-1]
+                ext = format.split('/')[-1]
 
                 # Декодируем base64
-                decoded_file = base64.b64decode(base64_data)
+                decoded_file = base64.b64decode(imgstr)
 
-                # Создаем имя файла
-                file_name = f"{uuid.uuid4()}.{file_extension}"
-
+                # Создаем уникальное имя файла
+                file_name = f"{uuid.uuid4().hex[:10]}.{ext}"
                 # Создаем ContentFile для Django
                 data = ContentFile(decoded_file, name=file_name)
 
             except (ValueError, TypeError, AttributeError) as e:
                 raise serializers.ValidationError(
-                    f"Ошибка декодирования base64: {str(e)}"
+                    f"Ошибка декодирования изображения: {str(e)}"
                 )
             except Exception as e:
                 raise serializers.ValidationError(
@@ -42,6 +39,20 @@ class Base64ImageField(serializers.ImageField):
                 )
 
         return super().to_internal_value(data)
+
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        model = User
+        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+
+
+class UserAvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64AvatarField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -118,7 +129,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64AvatarField(required=False, allow_null=True)
     cooking_time = serializers.IntegerField(required=False)
 
     class Meta:
@@ -226,12 +237,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def _create_or_update_tags(self, recipe, tags_data):
         """Создать или обновить теги рецепта."""
-
         recipe.tags.set(tags_data)
 
     def _create_or_update_ingredients(self, recipe, ingredients_data):
         """Создать или обновить ингредиенты рецепта."""
-
         # Удаляем старые ингредиенты
         recipe.recipe_ingredients.all().delete()
 
@@ -266,7 +275,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Обновление рецепта с поддержкой частичного обновления."""
-
         # Извлекаем ingredients и tags если они есть
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
@@ -313,8 +321,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_ingredients(self, obj):
         """Получаем ингредиенты с названиями и единицами измерения."""
-
-        # Используем существующий сериализатор
         return RecipeIngredientReadSerializer(
             obj.recipe_ingredients.select_related('ingredient').all(),
             many=True
@@ -326,7 +332,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         """Проверяет, в избранном ли рецепт у текущего пользователя."""
-
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(

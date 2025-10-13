@@ -17,19 +17,16 @@ class User(AbstractUser):
     first_name = models.CharField(
         'first name',
         max_length=settings.FIRST_NAME_MAX_LENGTH,
-        help_text='Обязательное поле. Укажите ваше имя.'
     )
     last_name = models.CharField(
         'last name',
         max_length=settings.LAST_NAME_MAX_LENGTH,
-        help_text='Обязательное поле. Укажите вашу фамилию.'
     )
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/avatars/',
         blank=True,
         default='',
-        max_length=500
     )
 
     USERNAME_FIELD = 'email'
@@ -82,7 +79,6 @@ class Subscription(models.Model):
         return f'{self.user} подписан на {self.author}'
 
     def clean(self):
-        """Валидация на уровне модели."""
         if self.user == self.author:
             raise ValidationError('Нельзя подписаться на самого себя')
 

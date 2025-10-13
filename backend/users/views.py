@@ -6,11 +6,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from api.serializers import (
-    SubscriptionSerializer, UserSerializer, SubscriptionCreateSerializer
+    SubscriptionSerializer,
+    UserSerializer,
+    SubscriptionCreateSerializer,
+    CustomUserCreateSerializer,
+    UserAvatarSerializer
 )
-
 from .models import Subscription, User
-from .serializers import CustomUserCreateSerializer, UserAvatarSerializer
 
 
 class UserPagination(PageNumberPagination):

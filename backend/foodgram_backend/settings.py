@@ -159,12 +159,12 @@ DJOSER = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React
-    "http://127.0.0.1:3000",
-    "http://localhost:8080",  # Vue
-    "http://127.0.0.1:8080",
-    "https://foodgrammus.duckdns.org",
-    "http://foodgrammus.duckdns.org",
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'https://foodgrammus.duckdns.org',
+    'http://foodgrammus.duckdns.org',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
