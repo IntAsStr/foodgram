@@ -96,9 +96,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
             serializer = FavoritesSerializer(data={
-                'user': user.id,
                 'recipe': recipe.id
-            })
+            }, context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
