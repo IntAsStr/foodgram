@@ -11,7 +11,7 @@ python manage.py migrate --noinput
 echo "⌛ Loading ingredients..."
 python manage.py shell -c "
 import json
-from api.models import Ingredient
+from recipes.models import Ingredient
 
 try:
     with open('/app/data/ingredients.json', 'r', encoding='utf-8') as f:
