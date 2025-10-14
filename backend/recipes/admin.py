@@ -1,8 +1,6 @@
 from django.contrib import admin
 
-from users.models import User
-
-from .models import (
+from api.models import (
     Favorite,
     Ingredient,
     Recipe,
@@ -10,15 +8,6 @@ from .models import (
     ShoppingCart,
     Tag,
 )
-
-
-@admin.register(User)
-class CustomUserAdmin(admin.ModelAdmin):
-    """Админка для пользователей."""
-
-    list_display = ('id', 'username', 'email', 'first_name', 'last_name')
-    search_fields = ('username', 'email')
-    list_filter = ('is_staff', 'is_superuser', 'is_active')
 
 
 class RecipeIngredientInline(admin.TabularInline):
