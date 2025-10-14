@@ -1,13 +1,18 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from constans import (
+    FIRST_NAME_MAX_LENGTH,
+    LAST_NAME_MAX_LENGTH,
+    USERNAME_MAX_LENGTH,
+)
 
 
 class User(AbstractUser):
     username = models.CharField(
         'username',
-        max_length=settings.USERNAME_MAX_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True
     )
     email = models.EmailField(
@@ -16,11 +21,11 @@ class User(AbstractUser):
     )
     first_name = models.CharField(
         'first name',
-        max_length=settings.FIRST_NAME_MAX_LENGTH,
+        max_length=FIRST_NAME_MAX_LENGTH,
     )
     last_name = models.CharField(
         'last name',
-        max_length=settings.LAST_NAME_MAX_LENGTH,
+        max_length=LAST_NAME_MAX_LENGTH,
     )
     avatar = models.ImageField(
         'Аватар',

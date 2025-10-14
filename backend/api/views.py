@@ -1,41 +1,35 @@
-from django.conf import settings
-from django.shortcuts import get_object_or_404
-from django.db.models import F, Sum, OuterRef, Exists, Count
+from django.db.models import Count, Exists, F, OuterRef, Sum
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets, filters
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from .filters import RecipeFilter
 from recipes.models import (
     Favorite,
-    Recipe,
     Ingredient,
+    Recipe,
     RecipeIngredient,
     ShoppingCart,
     Tag,
 )
+from users.models import Subscription, User
+
+from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    IngredientSerializer,
-    RecipeCreateSerializer,
-    RecipeSerializer,
-    ShortRecipeSerializer,
-    TagSerializer,
-    FavoritesSerializer,
-    UserSerializer,
-    CustomUserCreateSerializer,
-    UserAvatarSerializer,
-    SubscriptionSerializer,
-    SubscriptionCreateSerializer
+    CustomUserCreateSerializer, FavoritesSerializer, IngredientSerializer,
+    RecipeCreateSerializer, RecipeSerializer, ShortRecipeSerializer,
+    SubscriptionCreateSerializer, SubscriptionSerializer, TagSerializer,
+    UserAvatarSerializer, UserSerializer,
 )
-from users.models import User, Subscription
+from constans import RECIPE_PAGE_SIZE, USERS_PAGE_SIZE
 
 
 class RecipePagination(PageNumberPagination):
-    page_size = settings.RECIPE_PAGE_SIZE
+    page_size = RECIPE_PAGE_SIZE
     page_size_query_param = 'page_size'
 
 
@@ -60,11 +54,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags', 'recipe_ingredients__ingredient'
         )
 
-        # Аннотируем is_favorited и is_in_shopping_cart
         if self.request.user.is_authenticated:
-            from django.db.models import Exists, OuterRef
-
-            from .models import Favorite, ShoppingCart
 
             favorited = Favorite.objects.filter(
                 user=self.request.user,
@@ -138,18 +128,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            cart_item, created = ShoppingCart.objects.get_or_create(
-                user=user,
-                recipe=recipe
-            )
-            if not created:
+            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
                     {'error': 'Рецепт уже в корзине'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # Используем укороченный сериализатор
-            serializer = ShortRecipeSerializer(recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            serializer = ShortRecipeSerializer(
+                data={'recipe': recipe.id},
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user)
+
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
 
         elif request.method == 'DELETE':
             deleted_count, _ = ShoppingCart.objects.filter(
@@ -179,13 +173,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(cart_recipes, many=True)
         return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def shopping_cart_count(self, request):
-        """Получить актуальное количество рецептов в корзине."""
-        user = request.user
-        count = ShoppingCart.objects.filter(user=user).count()
-        return Response({'count': count})
 
     def generate_shopping_list_text(self, user):
         """Генерирует текст списка покупок для пользователя."""
@@ -259,25 +246,16 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         """Добавить рецепт в избранное."""
         recipe_id = request.data.get('recipe_id')
 
-        try:
-            recipe = get_object_or_404(Recipe, id=recipe_id)
-        except Recipe.DoesNotExist:
-            return Response(
-                {'error': 'Рецепт не найден'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        recipe = get_object_or_404(Recipe, id=recipe_id)
 
-        # Проверяем, не добавлен ли уже в избранное
         if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
             return Response(
                 {'error': 'Рецепт уже в избранном'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Создаем запись в избранном
         Favorite.objects.create(user=request.user, recipe=recipe)
 
-        # Возвращаем данные рецепта
         serializer = ShortRecipeSerializer(
             recipe, context={'request': request}
         )
@@ -300,7 +278,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
 
 class UserPagination(PageNumberPagination):
-    page_size = settings.USERS_PAGE_SIZE
+    page_size = USERS_PAGE_SIZE
     page_size_query_param = 'page_size'
 
 
@@ -323,7 +301,6 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Аннотируем is_subscribed для АВТОРА (того, на кого смотрим)
         if self.request.user.is_authenticated:
             subscribed = Subscription.objects.filter(
                 user=self.request.user,

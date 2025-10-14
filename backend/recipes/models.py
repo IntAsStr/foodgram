@@ -98,7 +98,8 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
-        verbose_name='Ингредиенты'
+        verbose_name='Ингредиенты',
+        related_name='recipes',
     )
     tags = models.ManyToManyField(
         Tag,
