@@ -189,8 +189,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         for item in shopping_list:
             text += (
-                f'• {item['name']} - '
-                f'{item['total_amount']} {item['unit']}\n'
+                f'• {item["name"]} - '
+                f'{item["total_amount"]} {item["unit"]}\n'
             )
 
         text += f'\nВсего позиций: {shopping_list.count()}\n'
