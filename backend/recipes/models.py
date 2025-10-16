@@ -66,7 +66,6 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
-        # Уникальность - один ингредиент не может быть дважды в одном рецепте
         constraints = [
             models.UniqueConstraint(
                 fields=['recipe', 'ingredient'],

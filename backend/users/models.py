@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from constans import (
+from foodgram.constants import (
     FIRST_NAME_MAX_LENGTH,
     LAST_NAME_MAX_LENGTH,
     USERNAME_MAX_LENGTH,

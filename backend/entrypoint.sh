@@ -2,13 +2,13 @@
 
 set -e
 
-echo "⌛ Waiting for database..."
+echo " Waiting for database..."
 sleep 10
 
-echo "⌛ Applying database migrations..."
+echo " Applying database migrations..."
 python manage.py migrate --noinput
 
-echo "⌛ Loading ingredients..."
+echo " Loading ingredients..."
 python manage.py shell -c "
 import json
 from recipes.models import Ingredient
@@ -26,15 +26,15 @@ try:
         if created:
             created_count += 1
     
-    print(f'✅ Загружено {created_count} новых ингредиентов! Всего в базе: {Ingredient.objects.count()}')
+    print(f' Загружено {created_count} новых ингредиентов! Всего в базе: {Ingredient.objects.count()}')
     
 except Exception as e:
-    print(f'❌ Ошибка загрузки ингредиентов: {e}')
+    print(f' Ошибка загрузки ингредиентов: {e}')
 "
 
-echo "⌛ Collecting static files..."
+echo " Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "✅ Backend is ready!"
+echo " Backend is ready!"
 
 exec "$@"

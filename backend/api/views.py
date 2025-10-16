@@ -25,7 +25,7 @@ from .serializers import (
     SubscriptionCreateSerializer, SubscriptionSerializer, TagSerializer,
     UserAvatarSerializer, UserSerializer,
 )
-from constans import RECIPE_PAGE_SIZE, USERS_PAGE_SIZE
+from foodgram.constants import RECIPE_PAGE_SIZE
 
 
 class RecipePagination(PageNumberPagination):
@@ -184,17 +184,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(total_amount=Sum('amount'))
 
         # Формируем текст
-        text = "Foodgram - Список покупок\n"
-        text += "=" * 40 + "\n\n"
+        text = 'Foodgram - Список покупок\n'
+        text += '=' * 40 + '\n\n'
 
         for item in shopping_list:
             text += (
-                f"• {item['name']} - "
-                f"{item['total_amount']} {item['unit']}\n"
+                f'• {item['name']} - '
+                f'{item['total_amount']} {item['unit']}\n'
             )
 
-        text += f"\nВсего позиций: {shopping_list.count()}\n"
-        text += "Приятных покупок! 🛒"
+        text += f'\nВсего позиций: {shopping_list.count()}\n'
+        text += 'Приятных покупок!'
 
         return text
 
@@ -254,38 +254,44 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        Favorite.objects.create(user=request.user, recipe=recipe)
+        favorite_data = {'user': request.user.id, 'recipe': recipe_id}
+        favorite_serializer = FavoritesSerializer(data=favorite_data)
 
-        serializer = ShortRecipeSerializer(
-            recipe, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if favorite_serializer.is_valid():
+            favorite_serializer.save()
+
+            serializer = ShortRecipeSerializer(
+                recipe, context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                favorite_serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def destroy(self, request, *args, **kwargs):
         """Удалить рецепт из избранного."""
-        try:
-            recipe_id = kwargs.get('pk')
-            favorite = Favorite.objects.get(
-                user=request.user, recipe_id=recipe_id
-            )
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Favorite.DoesNotExist:
+        recipe_id = kwargs.get('pk')
+
+        deleted_count, _ = Favorite.objects.filter(
+            user=request.user,
+            recipe_id=recipe_id
+        ).delete()
+
+        if deleted_count == 0:
             return Response(
                 {'error': 'Рецепт не найден в избранном'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-
-class UserPagination(PageNumberPagination):
-    page_size = USERS_PAGE_SIZE
-    page_size_query_param = 'page_size'
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
-    pagination_class = UserPagination
+    pagination_class = RecipePagination
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
