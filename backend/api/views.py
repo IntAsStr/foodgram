@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from foodgram_backend.constants import RECIPE_PAGE_SIZE
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -20,12 +21,18 @@ from users.models import Subscription, User
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    CustomUserCreateSerializer, FavoritesSerializer, IngredientSerializer,
-    RecipeCreateSerializer, RecipeSerializer, ShortRecipeSerializer,
-    SubscriptionCreateSerializer, SubscriptionSerializer, TagSerializer,
-    UserAvatarSerializer, UserSerializer,
+    CustomUserCreateSerializer,
+    FavoritesSerializer,
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeSerializer,
+    ShortRecipeSerializer,
+    SubscriptionCreateSerializer,
+    SubscriptionSerializer,
+    TagSerializer,
+    UserAvatarSerializer,
+    UserSerializer,
 )
-from foodgram.constants import RECIPE_PAGE_SIZE
 
 
 class RecipePagination(PageNumberPagination):
@@ -183,7 +190,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             unit=F('ingredient__measurement_unit')
         ).annotate(total_amount=Sum('amount'))
 
-        # Формируем текст
         text = 'Foodgram - Список покупок\n'
         text += '=' * 40 + '\n\n'
 
@@ -211,7 +217,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         text = self.generate_shopping_list_text(user)
 
-        # Создаем HTTP response с файлом
         response = HttpResponse(text, content_type='text/plain; charset=utf-8')
         response['Content-Disposition'] = (
             'attachment; filename="shopping_list.txt"'
@@ -257,18 +262,18 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         favorite_data = {'user': request.user.id, 'recipe': recipe_id}
         favorite_serializer = FavoritesSerializer(data=favorite_data)
 
-        if favorite_serializer.is_valid():
-            favorite_serializer.save()
-
-            serializer = ShortRecipeSerializer(
-                recipe, context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
+        if not favorite_serializer.is_valid():
             return Response(
                 favorite_serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        favorite_serializer.save()
+
+        serializer = ShortRecipeSerializer(
+            recipe, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         """Удалить рецепт из избранного."""
@@ -363,7 +368,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
             serializer.save()
 
-            # Возвращаем новый URL аватара
             avatar_url = None
             if user.avatar:
                 avatar_url = request.build_absolute_uri(user.avatar.url)

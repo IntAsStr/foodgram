@@ -5,11 +5,10 @@ from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
 
-from users.models import Subscription, User
-
 from recipes.models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+    Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag,
 )
+from users.models import Subscription, User
 
 
 class Base64AvatarField(serializers.ImageField):
