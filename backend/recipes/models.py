@@ -153,7 +153,7 @@ class Favorite(models.Model):
         ]
 
     def __str__(self):
-        return self.recipe
+        return f'{self.user.username} - {self.recipe.name}'
 
 
 class ShoppingCart(models.Model):
