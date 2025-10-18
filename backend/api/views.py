@@ -32,6 +32,7 @@ from .serializers import (
     TagSerializer,
     UserAvatarSerializer,
     UserSerializer,
+    ShoppingCartSerializer
 )
 
 
@@ -141,15 +142,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            serializer = ShortRecipeSerializer(
+            cart_serializer = ShoppingCartSerializer(
                 data={'recipe': recipe.id},
                 context={'request': request}
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
+
+            if not cart_serializer.is_valid():
+                return Response(
+                    cart_serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            cart_serializer.save(user=user)
 
             return Response(
-                serializer.data, status=status.HTTP_201_CREATED
+                cart_serializer.data, status=status.HTTP_201_CREATED
             )
 
         elif request.method == 'DELETE':

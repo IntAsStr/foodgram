@@ -465,3 +465,24 @@ class FavoritesSerializer(serializers.ModelSerializer):
 
         favorite = Favorite.objects.create(user=user, recipe=recipe)
         return favorite
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='recipe.id')
+    name = serializers.ReadOnlyField(source='recipe.name')
+    image = serializers.ImageField(source='recipe.image', read_only=True)
+    cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+
+    class Meta:
+        model = ShoppingCart
+        fields = ('id', 'name', 'image', 'cooking_time', 'user', 'recipe')
+
+    def create(self, validated_data):
+        """Создаем запись в корзине."""
+        user = validated_data['user']
+        recipe = validated_data['recipe']
+
+        shopping_cart = ShoppingCart.objects.create(user=user, recipe=recipe)
+        return shopping_cart
