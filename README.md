@@ -34,3 +34,12 @@ docker-compose exec backend python manage.py collectstatic --no-input
  Формирование списка покупок
 
  Скачивание списка покупок в формате TXT
+
+
+сервер-сайт данные:
+ ip: 89.169.162.168
+ https://foodgrammus.duckdns.org
+
+ адинка:
+    admin@example.ru
+    322musthave/
