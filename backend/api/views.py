@@ -236,6 +236,12 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['^name']
 
+    def filter_queryset(self, queryset):
+        search_term = self.request.query_params.get('name')
+        if search_term:
+            return queryset.filter(name__istartswith=search_term)
+        return queryset
+
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
