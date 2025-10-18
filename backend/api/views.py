@@ -234,7 +234,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    search_fields = ['^name']
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
