@@ -53,6 +53,13 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeIngredientInline,)
     readonly_fields = ('pub_date',)
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related('author').prefetch_related(
+            'tags', 'favorites', 'recipe_ingredients__ingredient'
+        )
+        return queryset
+
     def favorites_count(self, obj):
         return obj.favorites.count()
 
@@ -66,6 +73,11 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     search_fields = ('recipe__name', 'ingredient__name')
     list_filter = ('recipe', 'ingredient')
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related('recipe', 'ingredient')
+        return queryset
+
 
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
@@ -75,6 +87,11 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display_links = ('user',)
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related('user', 'recipe')
+        return queryset
 
 
 @admin.register(ShoppingCart)
