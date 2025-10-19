@@ -9,5 +9,6 @@ class CustomUserAdmin(UserAdmin):
     """Админка для пользователей."""
 
     list_display = ('id', 'username', 'email', 'first_name', 'last_name')
-    search_fields = ('username', 'email')
+    list_display_links = ('username', 'email')
+    search_fields = ('username', 'email', 'last_name')
     list_filter = ('is_staff', 'is_superuser', 'is_active')

@@ -23,7 +23,7 @@ class TagAdmin(admin.ModelAdmin):
     """Админка для тегов."""
 
     list_display = ('id', 'name', 'slug')
-    list_display_links = ('name',)
+    list_display_links = ('name', 'slug')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
@@ -46,10 +46,9 @@ class RecipeAdmin(admin.ModelAdmin):
         'id', 'name', 'author', 'cooking_time',
         'pub_date', 'favorites_count'
     )
-    list_display_links = ('name',)
+    list_display_links = ('name', 'author')
     search_fields = ('name', 'author__username', 'tags__name')
     list_filter = ('tags', 'pub_date', 'author')
-    filter_horizontal = ('tags',)
     inlines = (RecipeIngredientInline,)
     readonly_fields = ('pub_date',)
 
@@ -69,7 +68,7 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     """Админка для связи рецепт-ингредиент."""
 
     list_display = ('id', 'recipe', 'ingredient', 'amount')
-    list_display_links = ('recipe',)
+    list_display_links = ('recipe', 'ingredient')
     search_fields = ('recipe__name', 'ingredient__name')
     list_filter = ('recipe', 'ingredient')
 
@@ -84,7 +83,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     """Админка для избранных рецептов."""
 
     list_display = ('id', 'user', 'recipe')
-    list_display_links = ('user',)
+    list_display_links = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
 
@@ -99,6 +98,6 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     """Админка для корзины покупок."""
 
     list_display = ('id', 'user', 'recipe')
-    list_display_links = ('user',)
+    list_display_links = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
